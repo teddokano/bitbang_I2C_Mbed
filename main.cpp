@@ -19,136 +19,200 @@ void    start_condition( void );
 void    stop_condition( void );
 int     send_a_byte( uint8_t data );
 uint8_t receive_a_byte( int last_byte );
+void    bus_clear( void );
+
+int     i2c_receive_short( uint8_t address, uint8_t *data, int length );
+uint8_t receive_short( int last_byte );
 
 #define TARGET_ADDRESS  0x90    //  for P3T1085-ARD
 
 int main() {
-    initialize();
+	initialize();
 
 //    uint8_t data[]  = { 0xAA, 0x55 };
-    uint8_t data[ 2 ];
+	uint8_t data[ 2 ];
 
-    while( 1 ) {
-//        i2c_send( TARGET_ADDRESS, data, sizeof( data ) );
-        i2c_receive( TARGET_ADDRESS, data, sizeof( data ) );
-        printf( "%f\r\n", (data[ 0 ] << 8 | data[ 1 ]) / 256.0 );
-        wait( 1 );
-    }
+	while( 1 ) {
+		//  Normal receive transfer
+		i2c_receive( TARGET_ADDRESS, data, sizeof( data ) );
+		wait_us( 10 );
+
+		//  Short SCL pulse on reading 2nd byte
+		i2c_receive_short( TARGET_ADDRESS, data, sizeof( data ) );
+		wait_us( 10 );
+
+		//  SDA stuck may occur. Bus clear to force target get SDA HIGH
+		bus_clear();
+
+		printf( "%f\r\n", (data[ 0 ] << 8 | data[ 1 ]) / 256.0 );
+		wait( 1 );
+	}
 }
 
 void initialize( void )
 {
-    sda.mode( PullUp );
-    scl.mode( PullUp );
+	sda.mode( PullUp );
+	scl.mode( PullUp );
 
-    sda.output();
-    scl.output();
+	sda.output();
+	scl.output();
 
-    sda = 1;
-    scl = 1;
+	sda = 1;
+	scl = 1;
 }
 
 int i2c_send( uint8_t address, uint8_t *data, int length )
 {
-    int nak = 0;
+	int nak = 0;
 
-    start_condition();
-    nak = send_a_byte( address );
+	start_condition();
+	nak = send_a_byte( address );
 
-    if ( nak )
-    {
-        stop_condition();        
-        return 1;
-    }
+	if ( nak )
+	{
+		stop_condition();        
+		return 1;
+	}
 
-    for ( int i = 0; i < length; i++ )
-    {
-        nak = send_a_byte( data[ i ] );
+	for ( int i = 0; i < length; i++ )
+	{
+		nak = send_a_byte( data[ i ] );
 
-        if ( nak )
-            break;
-    }
+		if ( nak )
+			break;
+	}
 
-    stop_condition();
+	stop_condition();
 
-    return nak;
+	return nak;
 }
 
 int i2c_receive( uint8_t address, uint8_t *data, int length )
 {
-    int nak = 0;
+	int nak = 0;
 
-    start_condition();
-    nak = send_a_byte( address | 0x1 );
+	start_condition();
+	nak = send_a_byte( address | 0x1 );
 
-    if ( nak )
-    {
-        stop_condition();        
-        return 1;
-    }
+	if ( nak )
+	{
+		stop_condition();        
+		return 1;
+	}
 
-    for ( int i = 0; i < length; i++ )
-    {
-        data[ i ]   = receive_a_byte( ( i == (length - 1)) ? 1 : 0 );
-    }
+	for ( int i = 0; i < length; i++ )
+	{
+		data[ i ]   = receive_a_byte( ( i == (length - 1)) ? 1 : 0 );
+	}
 
-    stop_condition();
+	stop_condition();
 
-    return 0;
+	return 0;
+}
+
+int i2c_receive_short( uint8_t address, uint8_t *data, int length )
+{
+	int nak = 0;
+
+	start_condition();
+	nak = send_a_byte( address | 0x1 );
+
+	if ( nak )
+	{
+		stop_condition();        
+		return 1;
+	}
+
+	for ( int i = 0; i < length; i++ )
+	{
+		if (i == (length - 1))
+			data[ i ]   = receive_short( 1 );
+		else
+			data[ i ]   = receive_a_byte( 0 );
+	}
+
+	stop_condition();
+
+	return 0;
 }
 
 void start_condition( void )
 {
-    sda = 1;
-    scl = 1;
-    sda = 0;
-    scl = 0;
+	sda = 1;
+	scl = 1;
+	sda = 0;
+	scl = 0;
 }
 
 void stop_condition( void )
 {
-    scl = 0;
-    sda = 0;
-    scl = 1;
-    sda = 1;
+	scl = 0;
+	sda = 0;
+	scl = 1;
+	sda = 1;
 }
 
 int send_a_byte( uint8_t data )
 {
-    for ( int i = 7; i >= 0; i-- )
-    {
-        sda = (data >> i) & 0x1;
-        scl = 1;
-        scl = 0;
-    }
+	for ( int i = 7; i >= 0; i-- )
+	{
+		sda = (data >> i) & 0x1;
+		scl = 1;
+		scl = 0;
+	}
 
-    sda.input();
-    scl = 1;
-    int val = sda;
-    scl = 0;
+	sda.input();
+	scl = 1;
+	int val = sda;
+	scl = 0;
 
-    sda.output();
+	sda.output();
 
-    return val;
+	return val;
 }
 
 uint8_t receive_a_byte( int last_byte )
 {
-    uint8_t data    = 0;
-    sda.input();
+	uint8_t data    = 0;
+	sda.input();
 
-    for ( int i = 7; i >= 0; i-- )
-    {
-        scl = 1;
-        data = (sda & 0x1) << i;
-        scl = 0;
-    }
+	for ( int i = 7; i >= 0; i-- )
+	{
+		scl = 1;
+		data = (sda & 0x1) << i;
+		scl = 0;
+	}
 
-    sda.output();
-    sda = last_byte;
-    scl = 1;
-    scl = 0;
+	sda.output();
+	sda = last_byte;
+	scl = 1;
+	scl = 0;
 
-    return data;
+	return data;
 }
 
+uint8_t receive_short( int last_byte )
+{
+	uint8_t data    = 0;
+	sda.input();
+
+	for ( int i = 1; i >= 0; i-- )
+	{
+		scl = 1;
+		data = (sda & 0x1) << i;
+		scl = 0;
+	}
+
+	sda.output();
+	sda = last_byte;
+	scl = 1;
+	scl = 0;
+
+	return data;
+}
+
+void bus_clear( void )
+{
+	receive_a_byte( 1 );
+	stop_condition();
+}
