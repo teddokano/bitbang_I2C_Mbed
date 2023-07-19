@@ -22,7 +22,7 @@ uint8_t receive_a_byte( int last_byte );
 void    bus_clear( void );
 
 int     i2c_receive_short( uint8_t address, uint8_t *data, int length );
-uint8_t receive_short( int last_byte );
+uint8_t receive_short( int last_byte, int n_pulse = 3  );
 
 #define TARGET_ADDRESS  0x90    //  for P3T1085-ARD
 
@@ -127,7 +127,7 @@ int i2c_receive_short( uint8_t address, uint8_t *data, int length )
 	for ( int i = 0; i < length; i++ )
 	{
 		if (i == (length - 1))
-			data[ i ]   = receive_short( 1 );
+			data[ i ]   = receive_short( 1, 0 );
 		else
 			data[ i ]   = receive_a_byte( 0 );
 	}
@@ -156,8 +156,8 @@ void stop_condition( void )
 
     if ( !sda ) //  SDA stuck is happening!
         bus_clear();
-    
-	sda.output();
+
+    sda.output();
 }
 
 int send_a_byte( uint8_t data )
@@ -199,22 +199,25 @@ uint8_t receive_a_byte( int last_byte )
 	return data;
 }
 
-uint8_t receive_short( int last_byte )
+uint8_t receive_short( int last_byte, int n_pulse )
 {
 	uint8_t data    = 0;
 	sda.input();
 
-	for ( int i = 1; i >= 0; i-- )
+	for ( int i = (n_pulse - 2); i >= 0; i-- )
 	{
 		scl = 1;
 		data = (sda & 0x1) << i;
 		scl = 0;
 	}
 
-	sda.output();
-	sda = last_byte;
-	scl = 1;
-	scl = 0;
+    if ( n_pulse )
+    {
+        sda.output();
+        sda = last_byte;
+        scl = 1;
+        scl = 0;
+    }
 
 	return data;
 }
