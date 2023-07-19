@@ -42,7 +42,8 @@ int main() {
 		wait_us( 10 );
 
 		//  SDA stuck may occur. Bus clear to force target get SDA HIGH
-		bus_clear();
+		//  bus_clear();
+        //  the bus-clear will performed when the SDA stuck detected after stop-condition generated
 
 		printf( "%f\r\n", (data[ 0 ] << 8 | data[ 1 ]) / 256.0 );
 		wait( 1 );
@@ -150,6 +151,13 @@ void stop_condition( void )
 	sda = 0;
 	scl = 1;
 	sda = 1;
+
+	sda.input();
+
+    if ( !sda ) //  SDA stuck is happening!
+        bus_clear();
+    
+	sda.output();
 }
 
 int send_a_byte( uint8_t data )
@@ -213,6 +221,7 @@ uint8_t receive_short( int last_byte )
 
 void bus_clear( void )
 {
+    scl = 0;
 	receive_a_byte( 1 );
 	stop_condition();
 }

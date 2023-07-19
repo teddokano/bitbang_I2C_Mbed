@@ -1,0 +1,5 @@
+ROOT=.
+TARGET=K64F
+TARGET_CODE=0240
+DEVICE_ID[/home/studio/workspace/bitbang_i2c_mbed]=02400b0148824e450049700ededd001798d1000097969900
+DEVICE_TYPE[/home/studio/workspace/bitbang_i2c_mbed]=connected
