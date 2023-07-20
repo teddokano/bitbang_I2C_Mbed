@@ -37,6 +37,8 @@ int main() {
 		i2c_receive( TARGET_ADDRESS, data, sizeof( data ) );
 		wait_us( 10 );
 
+		printf( "%f\r\n", (data[ 0 ] << 8 | data[ 1 ]) / 256.0 );
+
 		//  Short SCL pulse on reading 2nd byte
 		i2c_receive_short( TARGET_ADDRESS, data, sizeof( data ) );
 		wait_us( 10 );
@@ -45,7 +47,6 @@ int main() {
 		//  bus_clear();
         //  the bus-clear will performed when the SDA stuck detected after stop-condition generated
 
-		printf( "%f\r\n", (data[ 0 ] << 8 | data[ 1 ]) / 256.0 );
 		wait( 1 );
 	}
 }
@@ -187,7 +188,7 @@ uint8_t receive_a_byte( int last_byte )
 	for ( int i = 7; i >= 0; i-- )
 	{
 		scl = 1;
-		data = (sda & 0x1) << i;
+		data |= (sda & 0x1) << i;
 		scl = 0;
 	}
 
@@ -207,7 +208,7 @@ uint8_t receive_short( int last_byte, int n_pulse )
 	for ( int i = (n_pulse - 2); i >= 0; i-- )
 	{
 		scl = 1;
-		data = (sda & 0x1) << i;
+		data |= (sda & 0x1) << i;
 		scl = 0;
 	}
 
