@@ -39,13 +39,10 @@ int main() {
 
 		printf( "%f\r\n", (data[ 0 ] << 8 | data[ 1 ]) / 256.0 );
 
-		//  Short SCL pulse on reading 2nd byte
+		//  In next function call, SDA stuck may occur. Bus clear to force target get SDA HIGH
+        //  the bus-clear will be performed when the SDA stuck detected after stop-condition generated
 		i2c_receive_short( TARGET_ADDRESS, data, sizeof( data ) );
 		wait_us( 10 );
-
-		//  SDA stuck may occur. Bus clear to force target get SDA HIGH
-		//  bus_clear();
-        //  the bus-clear will performed when the SDA stuck detected after stop-condition generated
 
 		wait( 1 );
 	}
