@@ -21,7 +21,7 @@ int     send_a_byte( uint8_t data );
 uint8_t receive_a_byte( int last_byte );
 void    bus_clear( void );
 
-int     i2c_receive_short( uint8_t address, uint8_t *data, int length );
+int     i2c_receive_short( uint8_t address, uint8_t *data, int length, int n_pulse = 3 );
 uint8_t receive_short( int last_byte, int n_pulse = 3  );
 
 #define TARGET_ADDRESS  0x90    //  for P3T1085-ARD
@@ -35,15 +35,14 @@ int main() {
 	while( 1 ) {
 		//  Normal receive transfer
 		i2c_receive( TARGET_ADDRESS, data, sizeof( data ) );
-		wait_us( 10 );
-
+	
 		printf( "%f\r\n", (data[ 0 ] << 8 | data[ 1 ]) / 256.0 );
 
-		//  In next function call, SDA stuck may occur. Bus clear to force target get SDA HIGH
-        //  the bus-clear will be performed when the SDA stuck detected after stop-condition generated
-		i2c_receive_short( TARGET_ADDRESS, data, sizeof( data ) );
-		wait_us( 10 );
-
+		//  In next function call, SDA stuck may occur.
+        //  The bus-clear will be performed when the SDA stuck detected after stop-condition generated.
+        //  The 4th argument is number of pulses (including SCL pulse on ACK) in second byte read. 
+		i2c_receive_short( TARGET_ADDRESS, data, sizeof( data ), 5 );
+	
 		wait( 1 );
 	}
 }
@@ -109,7 +108,7 @@ int i2c_receive( uint8_t address, uint8_t *data, int length )
 	return 0;
 }
 
-int i2c_receive_short( uint8_t address, uint8_t *data, int length )
+int i2c_receive_short( uint8_t address, uint8_t *data, int length, int n_pulse )
 {
 	int nak = 0;
 
@@ -125,7 +124,7 @@ int i2c_receive_short( uint8_t address, uint8_t *data, int length )
 	for ( int i = 0; i < length; i++ )
 	{
 		if (i == (length - 1))
-			data[ i ]   = receive_short( 1, 0 );
+			data[ i ]   = receive_short( 1, n_pulse );
 		else
 			data[ i ]   = receive_a_byte( 0 );
 	}
