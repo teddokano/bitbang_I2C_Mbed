@@ -131,6 +131,10 @@ int i2c_receive_short( uint8_t address, uint8_t *data, int length, int n_pulse )
 
 	stop_condition();
 
+    wait_ms( 10 );
+    bus_clear();
+
+
 	return 0;
 }
 
@@ -149,12 +153,14 @@ void stop_condition( void )
 	scl = 1;
 	sda = 1;
 
+#if 0
 	sda.input();
 
     if ( !sda ) //  SDA stuck is happening!
         bus_clear();
 
     sda.output();
+#endif
 }
 
 int send_a_byte( uint8_t data )
