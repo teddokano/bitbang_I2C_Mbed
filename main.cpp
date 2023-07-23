@@ -1,10 +1,22 @@
 #include "mbed.h"
 
+//#define FREQ_1MHz
+//#define FREQ_400KHz
+#define FREQ_100KHz
+
+#if     defined( FREQ_1MHz )
+    #define SCL_HIGH    scl=1;
+    #define SCL_LOW     scl=0;
+#elif    defined( FREQ_400KHz )
+    #define SCL_HIGH    scl=1; scl=1; scl=1;
+    #define SCL_LOW     scl=0; scl=0; scl=0;
+#elif    defined( FREQ_100KHz )
+    #define SCL_HIGH    scl=1; scl=1; scl=1; scl=1; scl=1; scl=1; scl=1; scl=1; scl=1; scl=1; scl=1; scl=1; scl=1; scl=1;
+    #define SCL_LOW     scl=0; scl=0; scl=0; scl=0; scl=0; scl=0; scl=0; scl=0; scl=0; scl=0; scl=0; scl=0; scl=0; scl=0;
+#endif
+
 #define SDA_HIGH    sda=1;
 #define SDA_LOW     sda=0;
-
-#define SCL_HIGH    scl=1;
-#define SCL_LOW     scl=0;
 
 //  for "mbed LPC1768"
 #if 0
