@@ -1,10 +1,10 @@
 #include "mbed.h"
 
-#define SDA_HIGH    sda = 1;
-#define SDA_LOW     sda = 0;
+#define SDA_HIGH    sda=1;
+#define SDA_LOW     sda=0;
 
-#define SCL_HIGH    scl = 1;
-#define SCL_LOW     scl = 0;
+#define SCL_HIGH    scl=1;
+#define SCL_LOW     scl=0;
 
 //  for "mbed LPC1768"
 #if 0
@@ -61,8 +61,8 @@ void initialize( void )
 	sda.output();
 	scl.output();
 
-	sda = 1;
-	scl = 1;
+	SDA_HIGH
+	SCL_HIGH
 }
 
 int i2c_send( uint8_t address, uint8_t *data, int length )
@@ -146,18 +146,18 @@ int i2c_receive_short( uint8_t address, uint8_t *data, int length, int n_pulse )
 
 void start_condition( void )
 {
-	sda = 1;
-	scl = 1;
-	sda = 0;
-	scl = 0;
+	SDA_HIGH
+	SCL_HIGH
+	SDA_LOW
+	SCL_LOW
 }
 
 void stop_condition( void )
 {
-	scl = 0;
-	sda = 0;
-	scl = 1;
-	sda = 1;
+	SCL_LOW
+	SDA_LOW
+	SCL_HIGH
+	SDA_HIGH
 
 #if 0
 	sda.input();
@@ -174,14 +174,14 @@ int send_a_byte( uint8_t data )
 	for ( int i = 7; i >= 0; i-- )
 	{
 		sda = (data >> i) & 0x1;
-		scl = 1;
-		scl = 0;
+		SCL_HIGH
+		SCL_LOW
 	}
 
 	sda.input();
-	scl = 1;
+	SCL_HIGH
 	int val = sda;
-	scl = 0;
+	SCL_LOW
 
 	sda.output();
 
@@ -195,15 +195,15 @@ uint8_t receive_a_byte( int last_byte )
 
 	for ( int i = 7; i >= 0; i-- )
 	{
-		scl = 1;
+		SCL_HIGH
 		data |= (sda & 0x1) << i;
-		scl = 0;
+		SCL_LOW
 	}
 
 	sda.output();
 	sda = last_byte;
-	scl = 1;
-	scl = 0;
+	SCL_HIGH
+	SCL_LOW
 
 	return data;
 }
@@ -215,17 +215,17 @@ uint8_t receive_short( int last_byte, int n_pulse )
 
 	for ( int i = (n_pulse - 2); i >= 0; i-- )
 	{
-		scl = 1;
+		SCL_HIGH
 		data |= (sda & 0x1) << i;
-		scl = 0;
+		SCL_LOW
 	}
 
     if ( n_pulse )
     {
         sda.output();
         sda = last_byte;
-        scl = 1;
-        scl = 0;
+        SCL_HIGH
+        SCL_LOW
     }
 
 	return data;
@@ -233,7 +233,7 @@ uint8_t receive_short( int last_byte, int n_pulse )
 
 void bus_clear( void )
 {
-    scl = 0;
+    SCL_LOW
 	receive_a_byte( 1 );
 	stop_condition();
 }
